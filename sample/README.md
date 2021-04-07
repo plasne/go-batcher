@@ -4,7 +4,7 @@ This code sample demonstrates the usage of the `go-batcher`.
 
 ## Prerequisites
 
-- [Go v1.15+](https://golang.org/) [TODO: 1.16 requires github.com/mattn/go-ieproxy@v0.0.1] 
+- [Go v1.15+](https://golang.org/)
 - [Visual Studio Code](https://code.visualstudio.com/)
 - [Azure Subscription](https://azure.microsoft.com/en-us/free/)
 
@@ -19,7 +19,7 @@ This code sample demonstrates the usage of the `go-batcher`.
     replace github.com/plasne/go-batcher => <local-path-for-go-batcher>
     ```
 
-5. Create an [Azure Storage Account](https://docs.microsoft.com/en-us/azure/storage/common/storage-account-create?toc=%2Fazure%2Fstorage%2Fblobs%2Ftoc.json&tabs=azure-cli) and a container. Using [Azure CLI](https://docs.microsoft.com/en-gb/cli/azure/install-azure-cli) you can use the following commands:
+5. Create an [Azure Storage Account](https://docs.microsoft.com/en-us/azure/storage/common/storage-account-create?toc=%2Fazure%2Fstorage%2Fblobs%2Ftoc.json&tabs=azure-cli) and a container. This will be the used for the AzureSharedResource rate limiter. Using [Azure CLI](https://docs.microsoft.com/en-gb/cli/azure/install-azure-cli) you can use the following commands:
 
     ```bash
     # Set your variables
@@ -45,17 +45,26 @@ This code sample demonstrates the usage of the `go-batcher`.
     az storage container create --name $AZBLOB_CONTAINER --account-name $AZBLOB_ACCOUNT --auth-mode login
     ```
 
-6. Ensure the following environment variables are set:
+6. Create your .env file by copying .sample-env
+
+    ```bash
+    cp .sample-env .env
+    ```
+
+    and set up the following variables:
+
     - AZBLOB_ACCOUNT: The Azure Storage Account name
     - AZBLOB_CONTAINER: The Azure Storage Account container
     - AZBLOB_KEY: The Azure Storage Account key
 
-[TODO: discuss with Peter usage of goconfig and include a note]
-
-7. Open your Terminal to run the sample:
+7. Open your Terminal to run the sample
 
     ```bash
     go run .
     ```
 
-[TODO: Work w/ Peter on usage steps]
+8. In another terminal run the following curl command to enqueue Operations to the Batcher.
+
+    ```bash
+    curl http://localhost:8080/ingest
+    ```
