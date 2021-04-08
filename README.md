@@ -1,11 +1,12 @@
 
 # Batcher
 
-- [Overview - Use Cases](#overview---use-cases)
-    - [Optimal use of resources](#optimal-use-of-resources)
-    - [Rate limiting](#rate-limiting)
-    - [Reserved vs Shared Capacity](#reserved-vs-shared-capacity)
-    - [Calibrate capacity against operation time](#calibrate-capacity-against-operation-time)
+- [Overview - Use Cases](#overview)
+- [Use Cases](#use-cases)
+    - [1. Rate limiting](#1.-rate-limiting)
+    - [2. Cost savings - Reserved vs Shared Capacity](#2.-cost-savings---reserved-vs-shared-capacity)
+    - [3. Cost control](#3.-cost-control)
+    - [4. Rate limiting on different resource targets](#4.-rate-limiting-on-other-resource-targets)
 - [Batcher Components](#batcher-components)
     - [Terminology](#terminology)
 - [Features](#features)
@@ -20,7 +21,7 @@
 - [Determining cost](#determining-cost)
 - [Opportunities for improvement](#opportunities-for-improvement)
 
-## Overview - Use Cases
+## Overview
 
 Go-batcher is a datastore-agnostic batching and rate-limiting implementation for Go. 
 
@@ -28,9 +29,11 @@ Datastores have performance limits and the work that is executed against them ha
 
 A Batcher, not only allows you to enqueue operations which are then given back to you in a batch, but can provide an easy way for applications to consume all available resources on a datastore without exceeding their performance limits. 
 
+## Use Cases
+
 Here are the most common use cases for Batcher:
 
-### 1. Optimal use of resources
+### 1. Rate Limiting
 
 Consider this scenario: 
 - You have an Azure Cosmos database that you have provisioned with 20K [Request Units (RU)](https://docs.microsoft.com/en-us/azure/cosmos-db/request-units). 
@@ -45,30 +48,27 @@ However, each process might try and send their own 100K records in parallel and 
 
 Batcher solves this problem by allowing you to share the capacity across multiple replicas and controlling the flow of traffic so you don't exceed the 20K RU per second.
 
-### 2. Rate limiting
-
-Consider this scenario:
-- You have a datastore (SQL Server for example) that does not have a native rate limiting feature. 
-- Just because you can send to your datastore as many requests as you want in a timeframe, that does not mean it can process those requests efficiently or without error.
-
-Batcher allows you to apply a rate limiter.
-
-### 3. Reserved vs Shared Capacity
+### 2. Cost savings - Reserved vs Shared Capacity
 
 Consider this scenario:
 - You have an Azure Cosmos database that is shared across 4 instances.
 - The Cosmos database has 20K RU.
-- You want to reserve some capacity for each instance before using shared capacity so that you can reduce latency.
+- You want to reserve capacity for each instance to operate at maximum capacity, but without having to provision 4 * 20K RU = 80K RU.
 
-Batcher has a rate limiter that allows you to allocate reserved capacity e.g., of 2K to each instance that will only be used by the respective instance. 
+Using Batcher, you might still reserve capacity per instance, but it can be a small amount. You can then share capacity across the instances. For instance, you might reserve 2K RU for each of the 4 instances and share an addition 18K RU, allowing each instance to have capacity between 2K and 20K RU.
 
-### 4. Calibrate capacity against operation time
+### 3. Cost control
 
 Consider this scenario:
 - You have an Azure Cosmos database 
 - You need to provision it with fixed capacity as this allows you to select the cost you are willing to pay for your database. 
 
 Batcher will ensure that you don't exceed this capacity by lengthening the time it takes for your operations to complete. Therefore, if you find that your application takes too long for operations to complete, you can increase the capacity. If you want to save money, you can decrease the capacity.
+
+
+### 4. Rate limiting on other resource targets
+
+Batcher use cases are not limited to datastores. Consider the scenario where you want to limit the number of messages you are allowed to send in a mail API. A Batcher can provide the same rate limiting feature.
 
 ## Batcher Components
 
@@ -249,7 +249,7 @@ There are a couple of scenarios I want to call attention to...
 
 Traditionally if you want to run multiple instances of a service, you might provision capacity in your datastore times the number of instances. For example, in Azure Cosmos, if you need 20K RU and have 4 instances, you might provision 80K RU to ensure that any node could operate at maximum capacity.
 
-Using AzureSharedResource, you might still reserve capacity per instance, but it can be a small amount. You can then share capacity across the instances. For instance, in the same scenario, you might reserve 2K RU for the 4 instances and (minimally) share an addition 18K RU ().
+Using AzureSharedResource, you might still reserve capacity per instance, but it can be a small amount. You can then share capacity across the instances. For instance, in the same scenario, you might reserve 2K RU for the 4 instances and (minimally) share an addition 18K RU.
 
 To give a cost comparison with retail pricing in the East US region with 1 TB of capacity:
 
