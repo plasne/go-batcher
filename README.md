@@ -223,11 +223,20 @@ There are some additional commands that can be executed on Batcher, including...
 
 ### Batcher Configuration
 
-Batcher can be configured depending on your use case and requirements. All configuration options are documented in the [Configuration docs](docs/batcher-configuration.md).
+Batcher can be configured depending on your use case and requirements. For example, creating  a new Batcher with some configuration items might look like this...
+
+```go
+batcher := gobatcher.NewBatcherWithBuffer(buffer).
+    WithRateLimiter(rateLimiter).
+    WithFlushInterval(100 * time.Millisecond).
+    WithCapacityInterval(100 * time.Millisecond)
+```
+
+All configuration options are documented in the [Batcher Configuration docs](docs/batcher-configuration.md).
 
 ### Events
 
-Events are raised with a "name" (string), "val" (int), and "msg" (*string) and are documented in the [Events docs](docs/batcher-events.md).
+Events are raised with a "name" (string), "val" (int), and "msg" (*string). Some of the events that can be raised by Batcher are `shutdown` or `pause`, while the rate limiters can raise events like `capacity` to indicate capacity changes. The complete list of Events is documented in the [Batcher Events docs](docs/batcher-events.md).
 
 ## Rate Limiting
 
