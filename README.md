@@ -2,9 +2,10 @@
 # Batcher
 
 - [Overview - Use Cases](#overview---use-cases)
-    - [Reliability - optimal use of resources](#Reliability---optimal-use-of-resources)
-    - [Reliability - rate limiting feature](#Reliability---rate-limiting-feature)
-    - [Scalability - calibrate capacity against operation time](#Scalability---calibrate-capacity-against-operation-time)
+    - [Optimal use of resources](#optimal-use-of-resources)
+    - [Rate limiting](#rate-limiting)
+    - [Reserved vs Shared Capacity](#reserved-vs-shared-capacity)
+    - [Calibrate capacity against operation time](#calibrate-capacity-against-operation-time)
 - [Batcher Components](#batcher-components)
     - [Terminology](#terminology)
 - [Features](#features)
@@ -29,7 +30,7 @@ A Batcher, not only allows you to enqueue operations which are then given back t
 
 Here are the most common use cases for Batcher:
 
-### Reliability - optimal use of resources
+### 1. Optimal use of resources
 
 Consider this scenario: 
 - You have an Azure Cosmos database that you have provisioned with 20K [Request Units (RU)](https://docs.microsoft.com/en-us/azure/cosmos-db/request-units). 
@@ -44,7 +45,7 @@ However, each process might try and send their own 100K records in parallel and 
 
 Batcher solves this problem by allowing you to share the capacity across multiple replicas and controlling the flow of traffic so you don't exceed the 20K RU per second.
 
-### Reliability - rate limiting feature
+### 2. Rate limiting
 
 Consider this scenario:
 - You have a datastore (SQL Server for example) that does not have a native rate limiting feature. 
@@ -52,7 +53,16 @@ Consider this scenario:
 
 Batcher allows you to apply a rate limiter.
 
-### Scalability - calibrate capacity against operation time
+### 3. Reserved vs Shared Capacity
+
+Consider this scenario:
+- You have an Azure Cosmos database that is shared across 4 instances.
+- The Cosmos database has 20K RU.
+- You want to reserve some capacity for each instance before using shared capacity so that you can reduce latency.
+
+Batcher has a rate limiter that allows you to allocate reserved capacity e.g., of 2K to each instance that will only be used by the respective instance. 
+
+### 4. Calibrate capacity against operation time
 
 Consider this scenario:
 - You have an Azure Cosmos database 
@@ -72,7 +82,7 @@ There are also 2 rate limiters provided out-of-the-box...
 
 - __ProvisionedResource__: This is a simple rate limiter that has a fixed capacity per second.
 
-- __AzureSharedResource__: This rate limiter allows you to reserve a fixed amount of capacity and then share a fixed amount of capacity across multiple processes.
+- __AzureSharedResource__: This rate limiter allows you to reserve a fixed amount of capacity and then share a fixed amount of capacity across multiple processes. An Azure Storage Account is used as the capacity lease management system.
 
 ![topology](./docs/images/topology.png)
 
