@@ -3,72 +3,74 @@
 
 - [Overview](#overview)
 - [Use Cases](#use-cases)
-    - [Rate limiting on datastores](#rate-limiting-on-datastores)
-    - [Cost savings - Reserved vs Shared Capacity](#cost-savings---reserved-vs-shared-capacity)
-    - [Cost control](#cost-control)
-    - [Rate limiting on other resource targets](#rate-limiting-on-other-resource-targets)
+  - [Rate limiting on datastores](#rate-limiting-on-datastores)
+  - [Cost savings - Reserved vs Shared Capacity](#cost-savings---reserved-vs-shared-capacity)
+  - [Cost control](#cost-control)
+  - [Rate limiting on other resource targets](#rate-limiting-on-other-resource-targets)
 - [Batcher Components](#batcher-components)
-    - [Terminology](#terminology)
+  - [Terminology](#terminology)
 - [Features](#features)
 - [Workflow](#workflow)
 - [Usage](#usage)
-    - [Batcher Configuration](#batcher-configuration)
-    - [Events](#events)
+  - [Batcher Configuration](#batcher-configuration)
+  - [Events](#events)
 - [Rate limiting](#rate-limiting)
-    - [Scenarios](#scenarios)
-    - [Cost savings](#cost-savings)
-    - [Cost increase](#cost-increase)
+  - [Scenarios](#scenarios)
+  - [Cost savings](#cost-savings)
+  - [Cost increase](#cost-increase)
 - [Determining cost](#determining-cost)
 - [Opportunities for improvement](#opportunities-for-improvement)
 
 ## Overview
 
-Go-batcher is a datastore-agnostic batching and rate-limiting implementation for Go. 
+Batcher is a datastore-agnostic batching and rate-limiting implementation for Go.
 
-Datastores have performance limits and the work that is executed against them has costs in terms of memory, CPU, disk, network, and so on (whether you have quantified those costs or not). 
+Datastores have performance limits and the work that is executed against them has costs in terms of memory, CPU, disk, network, and so on (whether you have quantified those costs or not).
 
-A Batcher, not only allows you to enqueue operations which are then given back to you in a batch, but can provide an easy way for applications to consume all available resources on a datastore without exceeding their performance limits. 
+Batcher, not only allows you to enqueue operations which are then given back to you in a batch, but can provide an easy way for applications to consume all available resources on a datastore without exceeding their performance limits.
 
 ## Use Cases
 
 Here are the most common use cases for Batcher:
 
-### Rate Limiting on datastores
+### Rate limiting on datastores
 
-Consider this scenario: 
-- You have an Azure Cosmos database that you have provisioned with 20K [Request Units (RU)](https://docs.microsoft.com/en-us/azure/cosmos-db/request-units). 
-- Your service runs in a pod with 4 replicas on Kubernetes that need to share the capacity. 
-- Your service gets large jobs for processing, commonly 100K records or more at a time. 
-- Each record costs 10 RU. 
-- If 2 jobs come in at the same time (1 job to each of 2 replicas), then we have `100K records x 2 jobs x 10 RU = 2M RU` of work that needs to be done. 
+Consider this scenario:
 
-Given that we have capacity of 20K RU per second, we know that we could complete the work in 100 seconds if we could spread it out. 
+- You have an Azure Cosmos database that you have provisioned with 20K [Request Units (RU)](https://docs.microsoft.com/en-us/azure/cosmos-db/request-units).
+- Your service runs in a pod with 4 replicas on Kubernetes that need to share the capacity.
+- Your service gets large jobs for processing, commonly 100K records or more at a time.
+- Each record costs 10 RU.
+- If 2 jobs come in at the same time (1 job to each of 2 replicas), then we have `100K records x 2 jobs x 10 RU = 2M RU` of work that needs to be done.
 
-However, each process might try and send their own 100K records in parallel and with no knowledge of each other. This would cause Cosmos to start issuing `429 TooManyRequests` error messages and given the volume it might even cut you off with `503 ServiceUnavailable` error messages. 
+Given that we have capacity of 20K RU per second, we know that we could complete the work in 100 seconds if we could spread it out.
+
+However, each process might try and send their own 100K records in parallel and with no knowledge of each other. This would cause Cosmos to start issuing `429 TooManyRequests` error messages and given the volume it might even cut you off with `503 ServiceUnavailable` error messages.
 
 Batcher solves this problem by allowing you to share the capacity across multiple replicas and controlling the flow of traffic so you don't exceed the 20K RU per second.
 
 ### Cost savings - Reserved vs Shared Capacity
 
 Consider this scenario:
-- You have an Azure Cosmos database that is shared across 4 instances.
-- The Cosmos database has 20K RU.
-- You want to reserve capacity for each instance to operate at maximum capacity, but without having to provision 4 * 20K RU = 80K RU.
 
-Using Batcher, you might still reserve capacity per instance, but it can be a small amount. You can then share capacity across the instances. For instance, you might reserve 2K RU for each of the 4 instances and share an addition 18K RU, allowing each instance to have capacity between 2K and 20K RU.
+- You have an Azure Cosmos database.
+- Your service runs in a pod with 4 replicas on Kubernetes that need to share the capacity.
+- You want to ensure that each replica can operate at up to 20K RU, but without having to provision 4 * 20K RU = 80K RU.
+
+Using Batcher, you might still reserve capacity per instance, but it can be a small amount. You can then share capacity across the instances. For instance, you might reserve 2K RU for each of the 4 instances and share an addition 18K RU, allowing each instance to have capacity between 2K and 20K RU. This would require provisioning 26K RU in Cosmos instead of 80K RU.
 
 ### Cost control
 
 Consider this scenario:
-- You have an Azure Cosmos database 
-- You need to provision it with fixed capacity as this allows you to select the cost you are willing to pay for your database. 
+
+- You have an Azure Cosmos database.
+- You have a lot of expensive reads and writes, but don't want to pay a lot for Cosmos.
 
 Batcher will ensure that you don't exceed this capacity by lengthening the time it takes for your operations to complete. Therefore, if you find that your application takes too long for operations to complete, you can increase the capacity. If you want to save money, you can decrease the capacity.
 
-
 ### Rate limiting on other resource targets
 
-Batcher use cases are not limited to datastores. Consider the scenario where you want to limit the number of messages you are allowed to send in a mail API. A Batcher can provide the same rate limiting feature.
+Batcher use cases are not limited to datastores. Consider the scenario where you want to limit the number of messages you are allowed to send in a mail API. Batcher can provide the same rate limiting feature.
 
 ## Batcher Components
 
@@ -86,7 +88,6 @@ There are also 2 rate limiters provided out-of-the-box...
 
 ![topology](./docs/images/topology.png)
 
-
 ### Terminology
 
 Some other terms will be used throughout...
@@ -97,14 +98,14 @@ Some other terms will be used throughout...
 
 - __Capacity__: The capacity that the rate limiter has been able to procure is available via the Capacity() method or the capacity event.
 
-- __MaxCapacity__: When using a rate limiter, the MaxCapacity is the maximum capacity that could even be provided. 
-  For the rate limiter `AzureSharedResource`, this is the total of SharedCapacity and ReservedCapacity.
+- __MaxCapacity__: When using a rate limiter, the MaxCapacity is the maximum capacity that could even be provided.
+  For the rate limiter AzureSharedResource, this is the total of SharedCapacity and ReservedCapacity.
 
   - __SharedCapacity__: AzureSharedResource has a SharedCapacity which is defined when NewAzureSharedResource() is called. This is the capacity for the datastore that is shared across any number of Instances. In the most simple case, if a Cosmos database had 20K RU and 4 Instances of the service using it, you might specify the SharedCapacity as 20K on each Instance if you want all the capacity shared. SharedCapacity reduces cost.
 
   - __ReservedCapacity__: AzureSharedResource optionally allows you to specify a ReservedCapacity that will only be used by this Instance. For example, in the above example, if you wanted to reserve 2K RU for each of your Instances, you might use a ReservedCapacity of 2K (on each of 4 Instances) and then use 12K for the SharedCapacity. ReservedCapacity reduces latency.
 
-  For the rate limiter `ProvisionedResource`, this is the MaxCapacity that was provided when New() was called.
+  For the rate limiter ProvisionedResource, this is the MaxCapacity that was provided when New() was called.
 
 - __Partitions__: The AzureSharedResource rate limiter divides the SharedCapacity by a factor to determine the number of partitions to provision as blobs. If a process owns the exclusive lease on the partition blob, then it is allowed to use 1 factor of capacity. For example, if the SharedCapacity is 10K and the factor is 1K, then there are 10 partitions, control of each is worth 1K capacity.
 
@@ -223,20 +224,18 @@ There are some additional commands that can be executed on Batcher, including...
 
 ### Batcher Configuration
 
-Batcher can be configured depending on your use case and requirements. For example, creating  a new Batcher with some configuration items might look like this...
+Batcher can be configured depending on your use case and requirements. For example, creating a new Batcher with some configuration items might look like this...
 
 ```go
 batcher := gobatcher.NewBatcherWithBuffer(buffer).
-    WithRateLimiter(rateLimiter).
-    WithFlushInterval(100 * time.Millisecond).
-    WithCapacityInterval(100 * time.Millisecond)
+    WithRateLimiter(rateLimiter)
 ```
 
-All configuration options are documented in the [Batcher Configuration docs](docs/batcher-configuration.md).
+All configuration options are documented in the [Batcher Configuration docs](docs/configuration.md).
 
 ### Events
 
-Events are raised with a "name" (string), "val" (int), and "msg" (*string). Some of the events that can be raised by Batcher are `shutdown` or `pause`, while the rate limiters can raise events like `capacity` to indicate capacity changes. The complete list of Events is documented in the [Batcher Events docs](docs/batcher-events.md).
+Events are raised with a "name" (string), "val" (int), and "msg" (*string). Some of the events that can be raised by Batcher are `shutdown` or `pause`, while the rate limiters can raise events like `capacity` to indicate capacity changes. The complete list of events is documented in the [Batcher Events docs](docs/events.md).
 
 ## Rate Limiting
 
