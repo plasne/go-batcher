@@ -3,10 +3,10 @@
 
 - [Overview - Use Cases](#overview)
 - [Use Cases](#use-cases)
-    - [1. Rate limiting](#1.-rate-limiting)
-    - [2. Cost savings - Reserved vs Shared Capacity](#2.-cost-savings---reserved-vs-shared-capacity)
-    - [3. Cost control](#3.-cost-control)
-    - [4. Rate limiting on different resource targets](#4.-rate-limiting-on-other-resource-targets)
+    - [Rate limiting](#rate-limiting)
+    - [Cost savings - Reserved vs Shared Capacity](#cost-savings---reserved-vs-shared-capacity)
+    - [Cost control](#cost-control)
+    - [Rate limiting on other resource targets](#rate-limiting-on-other-resource-targets)
 - [Batcher Components](#batcher-components)
     - [Terminology](#terminology)
 - [Features](#features)
@@ -252,7 +252,7 @@ There are a couple of scenarios I want to call attention to...
 
 - ReservedCapacity plus SharedCapacity: Using 100% ReservedCapacity reduces latency and using 100% SharedCapacity is very cost efficient, however, it is generally best to find a happy middle-ground - a small amount of ReservedCapacity and the rest as SharedCapacity.
 
-- Operations per Second: If you want to limit the number of Operations per second rather than on the cost of those operations. You can create all Operations with a cost of 1 and set the capacity appropriately.
+- Operations per Second: If you want to limit the number of Operations per second rather than the cost of those operations, you can create all Operations with a cost of 1 and set the capacity appropriately.
 
 ### Cost Savings
 
@@ -260,10 +260,10 @@ Traditionally if you want to run multiple instances of a service, you might prov
 
 Using AzureSharedResource, you might still reserve capacity per instance, but it can be a small amount. You can then share capacity across the instances. For instance, in the same scenario, you might reserve 2K RU for the 4 instances and (minimally) share an addition 18K RU.
 
+![reserved-shared-capacity](./docs/images/reserved-shared-capacity.png)
 To give a cost comparison with retail pricing in the East US region with 1 TB of capacity:
 
 - 80K RU is $4,992 per month
-
 - 26K RU is $1,768 per month
 
 ### Cost Increase
