@@ -38,7 +38,7 @@ batcher := gobatcher.NewBatcherWithBuffer(buffer).
 
 - __WithAuditInterval__ [DEFAULT: 10s]: This determines how often the Target is audited to ensure it is accurate. The Target is manipulated with atomic Operations and abandoned batches are cleaned up after MaxOperationTime so Target should always be accurate. Therefore, we should expect to only see "audit-pass" and "audit-skip" events. This audit interval is a failsafe that if the buffer is empty and the MaxOperationTime (on Batcher only; Watchers are ignored) is exceeded and the Target is greater than zero, it is reset and an "audit-fail" event is raised. Since Batcher is a long-lived process, this audit helps ensure a broken process does not monopolize SharedCapacity when it isn't needed.
 
-- __WithMaxOperationTime__ [DEFAULT: 1m]: This determines how long the system should wait for the Watcher's callback function to be completed before it assumes it is done and decreases the Target anyway. It is critical that the Target reflect the current cost of outstanding Operations. The MaxOperationTime ensures that a batch isn't orphaned and continues reserving capacity long after it is no longer needed. Please note there is also a MaxOperationTime on the Watcher which takes precident over this time.
+- __WithMaxOperationTime__ [DEFAULT: 1m]: This determines how long the system should wait for the Watcher's callback function to be completed before it assumes it is done and decreases the Target anyway. It is critical that the Target reflect the current cost of outstanding Operations. The MaxOperationTime ensures that a batch isn't orphaned and continues reserving capacity long after it is no longer needed. Please note there is also a MaxOperationTime on the Watcher which takes precedent over this time.
 
 - __WithPauseTime__ [DEFAULT: 500ms]: This determines how long the FlushInterval, CapacityInterval, and AuditIntervals are paused when Batcher.Pause() is called. Typically you would pause because the datastore cannot keep up with the volume of requests (if it happens maybe adjust your rate limiter).
 
@@ -122,6 +122,17 @@ Creating a new AzureSharedResource might look like this...
 ```go
 resource := gobatcher.NewAzureSharedResource("acountName", "containerName", sharedCapacity).
     WithMasterKey("masterKey")
+```
+
+Creating with all available configuration options might look like this...
+
+```go
+watcher := gobatcher.NewAzureSharedResource("acountName", "containerName", sharedCapacity).
+    WithMasterKey("masterKey").
+    WithFactor(1000).
+    WithReservedCapacity(2000).
+    WithMaxInterval(1).
+    WithMocks(container, blob) // where container, blob are mocks that emulate an Azure Storage Account
 ```
 
 - __accountName__ [REQUIRED]: The account name of the Azure Storage Account that will host the zero-byte blobs that serve as partitions for capacity.
