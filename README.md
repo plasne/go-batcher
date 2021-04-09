@@ -1,9 +1,9 @@
 
 # Batcher
 
-- [Overview - Use Cases](#overview)
+- [Overview](#overview)
 - [Use Cases](#use-cases)
-    - [Rate limiting](#rate-limiting)
+    - [Rate limiting on datastores](#rate-limiting-on-datastores)
     - [Cost savings - Reserved vs Shared Capacity](#cost-savings---reserved-vs-shared-capacity)
     - [Cost control](#cost-control)
     - [Rate limiting on other resource targets](#rate-limiting-on-other-resource-targets)
@@ -33,7 +33,7 @@ A Batcher, not only allows you to enqueue operations which are then given back t
 
 Here are the most common use cases for Batcher:
 
-### 1. Rate Limiting
+### Rate Limiting on datastores
 
 Consider this scenario: 
 - You have an Azure Cosmos database that you have provisioned with 20K [Request Units (RU)](https://docs.microsoft.com/en-us/azure/cosmos-db/request-units). 
@@ -48,7 +48,7 @@ However, each process might try and send their own 100K records in parallel and 
 
 Batcher solves this problem by allowing you to share the capacity across multiple replicas and controlling the flow of traffic so you don't exceed the 20K RU per second.
 
-### 2. Cost savings - Reserved vs Shared Capacity
+### Cost savings - Reserved vs Shared Capacity
 
 Consider this scenario:
 - You have an Azure Cosmos database that is shared across 4 instances.
@@ -57,7 +57,7 @@ Consider this scenario:
 
 Using Batcher, you might still reserve capacity per instance, but it can be a small amount. You can then share capacity across the instances. For instance, you might reserve 2K RU for each of the 4 instances and share an addition 18K RU, allowing each instance to have capacity between 2K and 20K RU.
 
-### 3. Cost control
+### Cost control
 
 Consider this scenario:
 - You have an Azure Cosmos database 
@@ -66,7 +66,7 @@ Consider this scenario:
 Batcher will ensure that you don't exceed this capacity by lengthening the time it takes for your operations to complete. Therefore, if you find that your application takes too long for operations to complete, you can increase the capacity. If you want to save money, you can decrease the capacity.
 
 
-### 4. Rate limiting on other resource targets
+### Rate limiting on other resource targets
 
 Batcher use cases are not limited to datastores. Consider the scenario where you want to limit the number of messages you are allowed to send in a mail API. A Batcher can provide the same rate limiting feature.
 
