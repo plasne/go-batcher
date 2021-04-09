@@ -34,7 +34,7 @@ batcher := gobatcher.NewBatcherWithBuffer(buffer).
 
 - __WithFlushInterval__ [DEFAULT: 100ms]: This determines how often Operations in the buffer are examined. Each time the interval fires, Operations will be dequeued and added to batches or released individually (if not batchable) until such time as the aggregate cost of everything considered in the interval exceeds the capacity allotted this timeslice. For the 100ms default, there will be 10 intervals per second, so the capacity allocated is 1/10th the available capacity. Generally you want FlushInterval to be under 1 second though it could technically go higher.
 
-- __WithCapacityInterval__ [DEFAULT: 100ms]: This determines how often the Batcher asks the RateLimiter for capacity. Generally you should leave this alone, but you could increase it to slow down the number of storage Operations required for sharing capacity. Please be aware that this only applies to Batcher asking for capacity, it doesn't mean the rate limiter will allocate capacity any faster, just that it is being asked more often.
+- __WithCapacityInterval__ [DEFAULT: 100ms]: This determines how often the Batcher asks the rate limiter for capacity. Generally you should leave this alone, and the implementation of what the rate limiter does when Batcher asks it for capacity could be different. For example, when using an AzureSharedResource rate limiter, you could increase it to slow down the number of storage Operations required for sharing capacity. Please be aware that this only applies to Batcher asking for capacity, it doesn't mean the rate limiter will allocate capacity any faster, just that it is being asked more often.
 
 - __WithAuditInterval__ [DEFAULT: 10s]: This determines how often the Target is audited to ensure it is accurate. The Target is manipulated with atomic Operations and abandoned batches are cleaned up after MaxOperationTime so Target should always be accurate. Therefore, we should expect to only see "audit-pass" and "audit-skip" events. This audit interval is a failsafe that if the buffer is empty and the MaxOperationTime (on Batcher only; Watchers are ignored) is exceeded and the Target is greater than zero, it is reset and an "audit-fail" event is raised. Since Batcher is a long-lived process, this audit helps ensure a broken process does not monopolize SharedCapacity when it isn't needed.
 
@@ -60,12 +60,6 @@ Creating with all available configuration options might look like this...
 
 ```go
 operation := gobatcher.NewOperation(&watcher, cost, payload).AllowBatch()
-```
-
-...or...
-
-```go
-operation := gobatcher.NewOperation(&watcher, cost, payload).WithBatching(true)
 ```
 
 - __watcher__ [REQUIRED]: To create a new Operation, you must pass a reference to a Watcher. When this Operation is put into a batch, it is to this Watcher that it will be raised.
